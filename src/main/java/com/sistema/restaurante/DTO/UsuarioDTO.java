@@ -21,7 +21,7 @@ public class UsuarioDTO {
     private String nombre;
     private String email;
     private String telefono;
-    private Rol rol; 
+    private Rol rol;
     private List<Map<String, String>> reserva;
     
 }

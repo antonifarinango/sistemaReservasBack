@@ -7,6 +7,9 @@ package com.sistema.restaurante.services;
 import com.sistema.restaurante.DTO.MesaDTO;
 import com.sistema.restaurante.DTO.MesaActualizacionDTO;
 import com.sistema.restaurante.entities.Mesa;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,5 +31,6 @@ public interface MesaService {
     void eliminarMesa(UUID idMesa);
     //VER MESAS DISPONIBLES
     boolean estaDisponible(UUID idMesa);
-    
+    //BUSCAR MESAS DISPONIBLES
+    List<Mesa> buscarMesasDisponibles(LocalDateTime fecha);
 }

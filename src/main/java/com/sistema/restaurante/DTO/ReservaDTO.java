@@ -5,6 +5,7 @@
 package com.sistema.restaurante.DTO;
 
 import com.sistema.restaurante.entities.EstadoReserva;
+import com.sistema.restaurante.entities.Servicio;
 import com.sistema.restaurante.entities.Turno;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -21,6 +22,7 @@ public class ReservaDTO {
     private LocalDateTime fecha;
     private Turno turno;
     private EstadoReserva estadoReserva;
+    private Servicio servicio;
     private int cantidadPersonas;
     private UUID usuario;
     private UUID mesa;

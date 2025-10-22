@@ -49,4 +49,6 @@ public class Mesa {
     @OneToMany(mappedBy = "mesa")
     private List<Reserva> reservas;
     
+    private boolean activa;
+    
 }

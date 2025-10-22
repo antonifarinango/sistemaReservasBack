@@ -5,6 +5,7 @@
 package com.sistema.restaurante.services;
 
 import com.sistema.restaurante.DTO.UsuarioDTO;
+import com.sistema.restaurante.DTO.UsuarioRolDTO;
 import com.sistema.restaurante.entities.Usuario;
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +20,10 @@ public interface UsuarioService{
     List<UsuarioDTO> obtenerUsuarios();
     
     //OBTENER LISTA DE USUARIOS POR ROL
-    List<UsuarioDTO> obtenerUsuarioRol();
+    List<UsuarioDTO> obtenerUsuariosRol();
+    
+    //OBTENER LISTA DE USUARIOS POR ROL
+    List<UsuarioRolDTO> obtenerUsuariosExcluyendoRol();
     
     //OBTENER USUARIO POR ID
     UsuarioDTO obtenerUsuario(UUID idUsuario);

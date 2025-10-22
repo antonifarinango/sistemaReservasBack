@@ -38,16 +38,16 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID> {
             + "WHERE r.estadoReserva = :estado")
     List<Reserva> findByEstado(@Param("estado") EstadoReserva estado);
 
-// SELECCIONAR LAS RESERVAS CONFIRMADAS O PENDIENTES PARA HOY
+    // SELECCIONAR LAS RESERVAS CONFIRMADAS EN LA PRÓXIMA SEMANA (EXCLUYENDO HOY)
     @Query("SELECT r "
             + "FROM Reserva r "
-            + "WHERE r.fecha BETWEEN :inicio AND :fin "
-            + "AND r.estadoReserva IN :estados "
+            + "WHERE r.estadoReserva = :estado "
+            + "AND r.fecha BETWEEN :inicio AND :fin "
             + "ORDER BY r.fecha ASC")
     List<Reserva> findProximasReservas(
+            @Param("estado") EstadoReserva estado,
             @Param("inicio") LocalDateTime inicio,
-            @Param("fin") LocalDateTime fin,
-            @Param("estados") List<EstadoReserva> estados);
+            @Param("fin") LocalDateTime fin);
 
 // HISTORIAL DE RESERVAS POR CLIENTE
     @Query("SELECT r "

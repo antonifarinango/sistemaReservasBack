@@ -9,7 +9,9 @@ import com.sistema.restaurante.DTO.LoginRequest;
 import com.sistema.restaurante.entities.Usuario;
 import com.sistema.restaurante.services.UsuarioService;
 import java.net.URI;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,18 +33,25 @@ public class AuthController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
-    
+
     @Autowired
     private UsuarioService usuarioService;
 
     @Autowired
     private JwtUtil jwtUtil;
-    
+
     @PostMapping("/register")
-    public ResponseEntity<Usuario> registrarUsuario(@RequestBody Usuario usuario) {
-        
+    public ResponseEntity<?> registrarUsuario(@RequestBody Usuario usuario) {
+
+        Usuario usuarioEncontrado = usuarioService.findByEmail(usuario.getEmail());
+
+        if (usuarioEncontrado != null) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "El correo ya está registrado."));
+        }
+
         Usuario nuevoUsuario = usuarioService.registrarUsuario(usuario);
-        
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -50,9 +59,14 @@ public class AuthController {
                 .buildAndExpand(nuevoUsuario.getId())
                 .toUri();
 
-        return ResponseEntity.created(location).body(nuevoUsuario);
+        return ResponseEntity
+        .created(location)
+        .body(Map.of(
+            "mensaje", "Usuario registrado correctamente.",
+            "usuario", nuevoUsuario
+        ));
     }
-    
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -61,8 +75,7 @@ public class AuthController {
                         request.getContrasenia()
                 )
         );
-        
-        System.out.println(request.getUsuario());
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtUtil.generateToken(authentication);
 

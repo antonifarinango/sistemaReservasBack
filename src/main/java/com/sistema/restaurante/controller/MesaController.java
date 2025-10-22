@@ -25,7 +25,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.sistema.restaurante.services.MesaService;
+import java.time.LocalDateTime;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  *
@@ -49,7 +51,7 @@ public class MesaController {
     }
     
     @GetMapping("administracion/{id}")
-    public ResponseEntity<MesaDTO> reserva(@PathVariable UUID id){
+    public ResponseEntity<MesaDTO> mesa(@PathVariable UUID id){
         
         try {
             
@@ -97,7 +99,18 @@ public class MesaController {
        response.put("delete", Boolean.TRUE);
        
        return ResponseEntity.ok(response);
-   } 
+   }
+   
+   @GetMapping("/disponibles")
+    public List<MesaActualizacionDTO> obtenerMesasDisponibles(@RequestParam LocalDateTime fecha){
+       
+        List<Mesa> listaMesas = mesaService.buscarMesasDisponibles(fecha);
+        
+       return listaMesas.stream()
+               .map(mapper::mappearMesaSinReserva)
+               .toList();
+       
+   }
     
     
     

@@ -9,69 +9,82 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
+import java.util.Collection;
 import java.util.Date;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
 /**
  *
  * @author Anthony
  */
 @Component
 public class JwtUtil {
-   
+
     @Value("${jwt.secret}")
-    private  String KEY;
-    
-    
-    private Key getSignKey(){
+    private String KEY;
+
+    private Key getSignKey() {
         return Keys.hmacShaKeyFor(KEY.getBytes());
     }
+
     //GENERAR TOKEN
-    public String generateToken(Authentication authentication){
-        
+    public String generateToken(Authentication authentication) {
+
         String username = authentication.getName();
+
+        // Tomar solo un rol
+        String rol = authentication.getAuthorities()
+                .stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElse("ROLE_Cliente"); // valor por defecto
+
         return Jwts.builder()
                 .setSubject(username)
+                .claim("rol", rol) // un solo rol como string
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 *  60  * 60 * 10))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
-        
+
     }
-    
+
     //EXTRAER USERNAME
-    public String extractUsername(String token){
-          Claims claims = Jwts.parser()
-               .setSigningKey(getSignKey())
-               .build()
-               .parseClaimsJws(token)
-               .getBody();
-          
-          return claims.getSubject();
+    public String extractUsername(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(getSignKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.getSubject();
     }
-    
+
     //VERIFICAR VALIDEZ DEL TOKEN
-    private boolean isTokenExpired(String token){
-        
+    private boolean isTokenExpired(String token) {
+
         Date expiration = Jwts.parser()
                 .setSigningKey(getSignKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
                 .getExpiration();
-        
+
         return expiration.before(new Date());
-        
+
     }
-    
+
     //VALIDAR TOKEN
-    public boolean validateToken(String token, UserDetails userDetails){
-        
+    public boolean validateToken(String token, UserDetails userDetails) {
+
         String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-        
+
     }
-    
+
 }

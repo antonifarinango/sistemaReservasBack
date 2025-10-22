@@ -17,6 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.sistema.restaurante.services.MesaService;
 import com.sistema.restaurante.repository.MesaRepository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  *
@@ -82,6 +86,7 @@ public class MesaServiceImp implements MesaService {
         mesa.setCapacidad(mesaActualizacionDTO.getCapacidad());
         mesa.setEstadoActual(mesaActualizacionDTO.getEstadoActual());
         mesa.setEstado(mesaActualizacionDTO.getEstado());
+        mesa.setActiva(mesaActualizacionDTO.isActiva());
 
         Mesa updated = mesaRepository.save(mesa);
 
@@ -118,6 +123,13 @@ public class MesaServiceImp implements MesaService {
         Mesa mesa = mesaRepository.findById(mesaId).orElse(null);
         
         return mesa.getEstado() != Estado.RESERVADA;
+        
+    }
+
+    @Override
+    public List<Mesa> buscarMesasDisponibles(LocalDateTime fecha) {
+    
+        return mesaRepository.findMesasDisponibles(fecha);
         
     }
 

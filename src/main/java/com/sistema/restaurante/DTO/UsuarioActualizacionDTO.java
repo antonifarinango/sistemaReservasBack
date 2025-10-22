@@ -18,5 +18,5 @@ public class UsuarioActualizacionDTO {
     private String nombre;
     private String email;
     private String telefono;
-    private Rol rol; 
+    private Rol rol;
 }

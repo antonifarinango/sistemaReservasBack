@@ -10,6 +10,7 @@ import com.sistema.restaurante.DTO.ReservaConMesaDTO;
 import com.sistema.restaurante.DTO.ReservaDTO;
 import com.sistema.restaurante.DTO.UsuarioActualizacionDTO;
 import com.sistema.restaurante.DTO.UsuarioDTO;
+import com.sistema.restaurante.DTO.UsuarioRolDTO;
 import com.sistema.restaurante.entities.Mesa;
 import com.sistema.restaurante.entities.Reserva;
 import com.sistema.restaurante.entities.Usuario;
@@ -46,7 +47,20 @@ public class SistemaReservaMapper {
         return usuarioDTO;
 
     }
+    
+    //*****************************************************************
+    
+    public UsuarioRolDTO mappearUsuarioARol(Usuario usuario) {
 
+        UsuarioRolDTO usuarioRolDTO = new UsuarioRolDTO();
+        BeanUtils.copyProperties(usuario, usuarioRolDTO);
+        
+        return usuarioRolDTO;
+
+    }
+    
+    //*****************************************************************
+    
     public Usuario mappearUsuarioDTO(UsuarioDTO usuarioDTO) {
 
         Usuario usuario = new Usuario();
@@ -70,6 +84,9 @@ public class SistemaReservaMapper {
     public ReservaConMesaDTO mappearReservaMesa (Reserva reserva) {
         ReservaConMesaDTO reservaConMesaDTO = new ReservaConMesaDTO();
         BeanUtils.copyProperties(reserva, reservaConMesaDTO, "usuario", "mesa");
+        
+        reservaConMesaDTO.setTurno(reserva.getTurno().getTurno());
+        //reservaConMesaDTO.setServicio(reserva.getServicio());
         
         MesaActualizacionDTO mesaSinReserva = this.mappearMesaSinReserva(reserva.getMesa());
         UsuarioActualizacionDTO usuarioSinReserva = this.mappearUsuarioSinReserva(reserva.getUsuario());

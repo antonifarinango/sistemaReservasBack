@@ -36,7 +36,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration config = new CorsConfiguration();
-            config.setAllowedOrigins(List.of("http://localhost:5173")); // FRONTED
+            config.setAllowedOrigins(List.of("http://localhost:5173")); // FRONTEND
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("*"));
             config.setAllowCredentials(true);
@@ -45,12 +45,23 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                .requestMatchers("/api/v1/usuarios/administracion/crearUsuario").hasRole("SUPERADMIN")
-                .requestMatchers("/api/v1/usuarios/administracion/auth/**").hasAnyRole("SUPERADMIN", "ADMIN")
-                .requestMatchers("/api/v1/mesas/administracion/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        
+                .requestMatchers("/api/v1/usuarios/administracion/**").hasAnyRole("Superadmin", "Admin", "Mesero")
+                        
+                .requestMatchers("/api/v1/mesas/administracion/**").hasAnyRole("Superadmin", "Admin", "Mesero")
                 .requestMatchers("/api/v1/mesas/todos").permitAll()
+                .requestMatchers("/api/v1/mesas/disponibles").permitAll()
+                        
                 .requestMatchers("/api/v1/reservas/**").permitAll()
                 .requestMatchers("/api/v1/disponibilidad/**").permitAll()
+                        
+                        
+                .requestMatchers("/api/v1/restaurantes/**").permitAll()
+                        
+                .requestMatchers("/ws/**").permitAll()
+                .requestMatchers("/app/**").permitAll()
+                .requestMatchers("/topic/**").permitAll()
+                        
                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -64,14 +75,30 @@ public class SecurityConfig {
     CommandLineRunner init(UsuarioRepository usuarioRepository, PasswordEncoder encoder) {
         return args -> {
             if (usuarioRepository.count() == 0) {
-                Usuario admin = Usuario.builder()
+                Usuario superAdmin = Usuario.builder()
                         .nombre("superadmin")
-                        .email("superadmin1")
+                        .email("superadmin@system")
                         .password(encoder.encode("superadmin@system"))
-                        .rol(Rol.SUPERADMIN)
+                        .rol(Rol.Superadmin)
                         .build();
 
+                Usuario admin = Usuario.builder()
+                        .nombre("admin")
+                        .email("admin@system")
+                        .password(encoder.encode("admin@system"))
+                        .rol(Rol.Admin)
+                        .build();
+
+                Usuario mesero = Usuario.builder()
+                        .nombre("mesero")
+                        .email("mesero@system")
+                        .password(encoder.encode("mesero@system"))
+                        .rol(Rol.Mesero)
+                        .build();
+
+                usuarioRepository.save(superAdmin);
                 usuarioRepository.save(admin);
+                usuarioRepository.save(mesero);
             }
         };
     }

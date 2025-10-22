@@ -17,7 +17,7 @@ import java.util.UUID;
 public interface ReservaService {
     
     //LISTA DE RESERVAS
-    List<ReservaDTO> obtenerReservas();
+    List<ReservaConMesaDTO> obtenerReservas();
     
     //LISTA RESERVAS POR DIA
     List<ReservaConMesaDTO> obtenerReservasPorDia();

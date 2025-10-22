@@ -5,9 +5,9 @@
 package com.sistema.restaurante.serviceImp;
 
 import com.sistema.restaurante.DTO.ReservaConMesaDTO;
-import com.sistema.restaurante.DTO.ReservaDTO;
 import com.sistema.restaurante.entities.EstadoReserva;
 import com.sistema.restaurante.entities.Reserva;
+import com.sistema.restaurante.entities.Servicio;
 import com.sistema.restaurante.mappers.SistemaReservaMapper;
 import java.util.List;
 import java.util.UUID;
@@ -33,12 +33,12 @@ public class ReservaServiceImp implements ReservaService {
     private SistemaReservaMapper mapper;
 
     @Override
-    public List<ReservaDTO> obtenerReservas() {
+    public List<ReservaConMesaDTO> obtenerReservas() {
 
         List<Reserva> listaReservas = reservaRepository.findAll();
 
         return listaReservas.stream()
-                .map(mapper::mappearReserva)
+                .map(mapper::mappearReservaMesa)
                 .toList();
 
     }
@@ -54,6 +54,7 @@ public class ReservaServiceImp implements ReservaService {
     @Override
     public Reserva crearReserva(Reserva reserva) {
         reserva.setEstadoReserva(EstadoReserva.Pendiente);
+        reserva.setServicio(Servicio.SinServicio);
         return reservaRepository.save(reserva);
     }
 
@@ -67,11 +68,12 @@ public class ReservaServiceImp implements ReservaService {
         reserva.setMesa(nuevaReserva.getMesa());
         reserva.setTurno(nuevaReserva.getTurno());
         reserva.setEstadoReserva(nuevaReserva.getEstadoReserva());
+        reserva.setServicio(nuevaReserva.getServicio());
 
         return reservaRepository.save(reserva);
 
     }
-    
+
     @Override
     public void eliminarReserva(UUID idReserva) {
 
@@ -89,6 +91,7 @@ public class ReservaServiceImp implements ReservaService {
         LocalDate hoy = LocalDate.now();
         LocalDateTime inicio = hoy.atStartOfDay();
         LocalDateTime fin = hoy.plusDays(1).atStartOfDay().minusSeconds(1);
+
         List<Reserva> listaReservasHoy = reservaRepository.findReservasHoy(EstadoReserva.Confirmada, inicio, fin);
 
         return listaReservasHoy.stream().map(mapper::mappearReservaMesa).toList();
@@ -109,16 +112,14 @@ public class ReservaServiceImp implements ReservaService {
     @Override
     public List<ReservaConMesaDTO> obtenerReservasProximas() {
         LocalDate hoy = LocalDate.now();
-        LocalDateTime inicio = hoy.atStartOfDay();
-        LocalDateTime fin = hoy.withDayOfMonth(hoy.lengthOfMonth()).atTime(23, 59, 59);
+        LocalDateTime inicio = hoy.plusDays(1).atStartOfDay(); // desde mañana
+        LocalDateTime fin = hoy.plusWeeks(1).plusDays(1).atStartOfDay().minusSeconds(1); // hasta dentro de 7 días
 
-        List<EstadoReserva> estados = Arrays.asList(EstadoReserva.Confirmada, EstadoReserva.Pendiente);
-        List<Reserva> listaReservasProximas = reservaRepository.findProximasReservas(inicio, fin, estados);
+        List<Reserva> reservas = reservaRepository.findProximasReservas(EstadoReserva.Confirmada, inicio, fin);
 
-        return listaReservasProximas.stream()
+        return reservas.stream()
                 .map(mapper::mappearReservaMesa)
                 .toList();
-
     }
 
     @Override

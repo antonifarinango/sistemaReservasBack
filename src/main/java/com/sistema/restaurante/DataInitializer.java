@@ -13,10 +13,12 @@ import com.sistema.restaurante.entities.Estado;
 import com.sistema.restaurante.entities.EstadoAhora;
 import com.sistema.restaurante.entities.HorarioRestaurante;
 import com.sistema.restaurante.entities.Mesa;
+import com.sistema.restaurante.entities.Restaurante;
 import com.sistema.restaurante.entities.Turno;
 import com.sistema.restaurante.repository.DisponibilidadTurnoRepository;
 import com.sistema.restaurante.repository.HorarioRestauranteRepository;
 import com.sistema.restaurante.repository.MesaRepository;
+import com.sistema.restaurante.repository.RestauranteRepository;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +40,9 @@ public class DataInitializer implements CommandLineRunner {
     
     @Autowired
     private HorarioRestauranteRepository horarioRestauranteRepository;
+    
+    @Autowired
+    private RestauranteRepository restauranteRepository;
 
     @Override
     @Transactional
@@ -51,6 +56,7 @@ public class DataInitializer implements CommandLineRunner {
                 mesa.setCapacidad(4); // o el valor que quieras
                 mesa.setEstadoActual(EstadoAhora.Libre);
                 mesa.setEstado(Estado.DISPONIBLE); // estado inicial
+                mesa.setActiva(true);
                 mesaRepository.save(mesa);
             }
             System.out.println("Mesas iniciales creadas automáticamente");
@@ -100,6 +106,20 @@ public class DataInitializer implements CommandLineRunner {
 
             System.out.println("Horarios creados automáticamente para todos los días de la semana.");
         }
+         
+         if(restauranteRepository.count() == 0){
+             
+               Restaurante restaurante = new Restaurante();
+               
+               restaurante.setDescripcion("Descripcion Restaurante");
+               restaurante.setDireccion("Direccion restaurante");
+               restaurante.setEmail("Email restaurante");
+               restaurante.setNombre("Nombre restaurante");
+               restaurante.setTelefono("Teléfono restaurante");
+               
+               restauranteRepository.save(restaurante);
+               
+         }
     }
          
 }

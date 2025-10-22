@@ -4,9 +4,7 @@
  */
 package com.sistema.restaurante.DTO;
 
-import com.sistema.restaurante.entities.Estado;
-import com.sistema.restaurante.entities.EstadoAhora;
-import java.util.List;
+import com.sistema.restaurante.entities.Rol;
 import java.util.UUID;
 import lombok.Data;
 
@@ -14,15 +12,13 @@ import lombok.Data;
  *
  * @author Anthony
  */
+
 @Data
-public class MesaDTO {
-    
+public class UsuarioRolDTO {
     private UUID id;
-    private int numero;
-    private int capacidad;
-    private EstadoAhora estadoActual;
-    private Estado estado;
-    private boolean activa;
-    private List<ReservaDTO> reservas;
-    
+    private String nombre;
+    private String email;
+    private String telefono;
+    private String password;
+    private Rol rol;
 }

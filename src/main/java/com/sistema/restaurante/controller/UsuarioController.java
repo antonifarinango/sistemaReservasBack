@@ -5,6 +5,7 @@
 package com.sistema.restaurante.controller;
 
 import com.sistema.restaurante.DTO.UsuarioDTO;
+import com.sistema.restaurante.DTO.UsuarioRolDTO;
 import com.sistema.restaurante.entities.Usuario;
 import java.net.URI;
 import java.util.HashMap;
@@ -55,9 +56,16 @@ public class UsuarioController {
     }
     
     @GetMapping("/clientes")
-    public List<UsuarioDTO> listaUsuariosRol (){
+    public List<UsuarioDTO> listaUsuariosRolCliente (){
         
-        return usuarioService.obtenerUsuarioRol();
+        return usuarioService.obtenerUsuariosRol();
+        
+    }
+    
+    @GetMapping("/roles")
+    public List<UsuarioRolDTO> listaUsuariosRol (){
+        
+        return usuarioService.obtenerUsuariosExcluyendoRol();
         
     }
     

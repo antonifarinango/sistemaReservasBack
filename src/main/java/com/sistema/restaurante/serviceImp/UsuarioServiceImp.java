@@ -5,6 +5,7 @@
 package com.sistema.restaurante.serviceImp;
 
 import com.sistema.restaurante.DTO.UsuarioDTO;
+import com.sistema.restaurante.DTO.UsuarioRolDTO;
 import com.sistema.restaurante.entities.Rol;
 import com.sistema.restaurante.entities.Usuario;
 import com.sistema.restaurante.mappers.SistemaReservaMapper;
@@ -84,7 +85,7 @@ public class UsuarioServiceImp implements UsuarioService {
     @Override
     public Usuario findByEmail(String email) {
 
-        return usuarioRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return usuarioRepository.findByEmail(email).orElse(null);
 
     }
 
@@ -92,7 +93,7 @@ public class UsuarioServiceImp implements UsuarioService {
     public Usuario registrarUsuario(Usuario usuario) {
 
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword())); //ENCRIPTAR LA CONTRASEÑA
-        usuario.setRol(Rol.CLIENTE);
+        usuario.setRol(Rol.Cliente);
 
         return usuarioRepository.save(usuario);
 
@@ -104,7 +105,7 @@ public class UsuarioServiceImp implements UsuarioService {
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword())); //ENCRIPTAR LA CONTRASEÑA
 
         if (usuario.getRol() == null) {
-            usuario.setRol(Rol.ADMIN);
+            usuario.setRol(Rol.Admin);
         } else {
             usuario.setRol(usuario.getRol());
         }
@@ -114,14 +115,24 @@ public class UsuarioServiceImp implements UsuarioService {
     }
 
     @Override
-    public List<UsuarioDTO> obtenerUsuarioRol() {
-        
-        List<Usuario> listaUsuarios = usuarioRepository.findUsuariosConReservasByRol(Rol.CLIENTE);
-        
+    public List<UsuarioDTO> obtenerUsuariosRol() {
+
+        List<Usuario> listaUsuarios = usuarioRepository.findUsuariosConReservasByRol(Rol.Cliente);
+
         return listaUsuarios.stream()
                 .map(mapper::mappearUsuario)
                 .toList();
-        
+
+    }
+
+    @Override
+    public List<UsuarioRolDTO> obtenerUsuariosExcluyendoRol() {
+
+        List<Usuario> listaUsuarios = usuarioRepository.findUsuariosExcluyendoRol(Rol.Cliente);
+
+        return listaUsuarios.stream()
+                .map(mapper::mappearUsuarioARol)
+                .toList();
     }
 
 }

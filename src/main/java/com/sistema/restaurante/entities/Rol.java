@@ -9,7 +9,9 @@ package com.sistema.restaurante.entities;
  * @author Anthony
  */
 public enum Rol {
-    SUPERADMIN,
-    CLIENTE,
-    ADMIN
+    Superadmin,
+    Admin,
+    Mesero,
+    Cliente
+    
 }

@@ -31,4 +31,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 """)
     List<Usuario> findUsuariosConReservasByRol(@Param("rol") Rol rol);
 
+    @Query("""
+    SELECT u
+    FROM Usuario u
+    WHERE u.rol <> :rol
+""")
+    List<Usuario> findUsuariosExcluyendoRol(@Param("rol") Rol rol);
+    
+
 }

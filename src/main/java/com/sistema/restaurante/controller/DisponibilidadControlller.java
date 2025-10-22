@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -53,6 +54,15 @@ public class DisponibilidadControlller {
     @GetMapping("/horarios")
     public List<HorarioRestaurante> listaHorarios() {
         return horarioRestauranteService.obtenerHorariosRestaurante();
+    }
+    
+    @GetMapping("/horario")
+    public ResponseEntity<HorarioRestaurante> horario(@RequestParam String dia) {
+        
+        HorarioRestaurante horario  =  horarioRestauranteService.obtenerPorDia(dia);
+        
+        return ResponseEntity.ok(horario);
+        
     }
 
     @GetMapping("/fechasBloqueadas")

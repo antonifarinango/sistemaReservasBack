@@ -95,6 +95,11 @@
             <version>0.17.31</version>
             <type>jar</type>
         </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -122,7 +127,8 @@
                         </exclude>
                     </excludes>
                 </configuration>
-            </plugin>
+            </plugin> 
+            
             
         </plugins>
     </build>

@@ -8,7 +8,8 @@ package com.sistema.restaurante.entities;
  *
  * @author Anthony
  */
-public enum EstadoReserva {
-    Pendiente,
-    Confirmada
+public enum Servicio {
+    SinServicio, 
+    EnServicio,
+    Finalizada
 }
