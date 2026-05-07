@@ -19,6 +19,6 @@ public class MesaActualizacionDTO {
     private int numero;
     private int capacidad;
     private EstadoAhora estadoActual;
-    private Estado estado;
+    private Estado estado; 
     private boolean activa;
 }

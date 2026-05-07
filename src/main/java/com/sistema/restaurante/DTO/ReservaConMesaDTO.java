@@ -27,5 +27,6 @@ public class ReservaConMesaDTO {
     private Servicio servicio;
     private UsuarioActualizacionDTO usuario;
     private MesaActualizacionDTO mesa;
+    private String tipoNotificacion;
     
 }

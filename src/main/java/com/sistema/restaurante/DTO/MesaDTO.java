@@ -23,6 +23,6 @@ public class MesaDTO {
     private EstadoAhora estadoActual;
     private Estado estado;
     private boolean activa;
-    private List<ReservaDTO> reservas;
+    private List<ReservaConMesaDTO> reservas;
     
 }

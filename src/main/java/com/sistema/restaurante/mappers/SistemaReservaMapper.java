@@ -66,6 +66,7 @@ public class SistemaReservaMapper {
         Usuario usuario = new Usuario();
         BeanUtils.copyProperties(usuarioDTO, usuario, "mesa", "usuario");
         
+        System.out.println("************************************************************************************************" + usuario + "************************************************************************************************");
         return usuario;
 
     }
@@ -86,7 +87,7 @@ public class SistemaReservaMapper {
         BeanUtils.copyProperties(reserva, reservaConMesaDTO, "usuario", "mesa");
         
         reservaConMesaDTO.setTurno(reserva.getTurno().getTurno());
-        //reservaConMesaDTO.setServicio(reserva.getServicio());
+        reservaConMesaDTO.setServicio(reserva.getServicio());
         
         MesaActualizacionDTO mesaSinReserva = this.mappearMesaSinReserva(reserva.getMesa());
         UsuarioActualizacionDTO usuarioSinReserva = this.mappearUsuarioSinReserva(reserva.getUsuario());
@@ -121,11 +122,11 @@ public class SistemaReservaMapper {
         MesaDTO mesaDTO = new MesaDTO();
         BeanUtils.copyProperties(mesa, mesaDTO, "reservas");
         
-        List<ReservaDTO> listaReservaDTO = mesa.getReservas().stream()
-                .map(this :: mappearReserva)
+        List<ReservaConMesaDTO> listaReservaConMesaDTO = mesa.getReservas().stream()
+                .map(this :: mappearReservaMesa)
                 .toList();
         
-        mesaDTO.setReservas(listaReservaDTO);
+        mesaDTO.setReservas(listaReservaConMesaDTO);
         
         return mesaDTO;
     }

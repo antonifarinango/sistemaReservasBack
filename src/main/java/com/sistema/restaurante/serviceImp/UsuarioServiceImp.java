@@ -115,7 +115,7 @@ public class UsuarioServiceImp implements UsuarioService {
     }
 
     @Override
-    public List<UsuarioDTO> obtenerUsuariosRol() {
+    public List<UsuarioDTO> obtenerUsuariosConReservaPorRol() {
 
         List<Usuario> listaUsuarios = usuarioRepository.findUsuariosConReservasByRol(Rol.Cliente);
 
@@ -133,6 +133,17 @@ public class UsuarioServiceImp implements UsuarioService {
         return listaUsuarios.stream()
                 .map(mapper::mappearUsuarioARol)
                 .toList();
+    }
+
+    @Override
+    public List<UsuarioDTO> obtenerUsuariosPorRol() {
+        
+       List<Usuario> listaUsuarios = usuarioRepository.findUsuariosByRol(Rol.Cliente);
+
+        return listaUsuarios.stream()
+                .map(mapper::mappearUsuario)
+                .toList();
+        
     }
 
 }

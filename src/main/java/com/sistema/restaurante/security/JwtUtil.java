@@ -4,6 +4,8 @@
  */
 package com.sistema.restaurante.security;
 
+import com.sistema.restaurante.entities.Usuario;
+import com.sistema.restaurante.services.UsuarioService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -11,7 +13,9 @@ import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Collection;
 import java.util.Date;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.security.core.Authentication;
@@ -31,12 +35,16 @@ public class JwtUtil {
     private Key getSignKey() {
         return Keys.hmacShaKeyFor(KEY.getBytes());
     }
+    
+    @Autowired
+    private UsuarioService usuarioService;
 
     //GENERAR TOKEN
     public String generateToken(Authentication authentication) {
-
+        
         String username = authentication.getName();
-
+        Usuario usuario = usuarioService.findByEmail(username);
+        
         // Tomar solo un rol
         String rol = authentication.getAuthorities()
                 .stream()
@@ -46,6 +54,7 @@ public class JwtUtil {
 
         return Jwts.builder()
                 .setSubject(username)
+                .claim("usuarioId", usuario.getId())
                 .claim("rol", rol) // un solo rol como string
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))

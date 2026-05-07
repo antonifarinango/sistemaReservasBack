@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import java.time.LocalTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -33,5 +35,9 @@ public class HorarioRestaurante {
     private LocalTime horaApertura;
     @JsonFormat(pattern = "HH:mm")
     private LocalTime horaCierre;
+    
+    @ManyToOne
+    @JoinColumn(name = "restaurante_id")
+    private Restaurante restaurante;
     
 }

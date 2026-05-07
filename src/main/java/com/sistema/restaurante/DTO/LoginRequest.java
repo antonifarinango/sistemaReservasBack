@@ -4,6 +4,7 @@
  */
 package com.sistema.restaurante.DTO;
 
+import java.util.UUID;
 import lombok.Data;
 
 /**

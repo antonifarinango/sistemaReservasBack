@@ -6,6 +6,7 @@ package com.sistema.restaurante.serviceImp;
 
 import com.sistema.restaurante.DTO.MesaDTO;
 import com.sistema.restaurante.DTO.MesaActualizacionDTO;
+import com.sistema.restaurante.DTO.ReservaConMesaDTO;
 import com.sistema.restaurante.DTO.ReservaDTO;
 import com.sistema.restaurante.entities.Estado;
 import com.sistema.restaurante.entities.EstadoAhora;
@@ -17,10 +18,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.sistema.restaurante.services.MesaService;
 import com.sistema.restaurante.repository.MesaRepository;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 
 /**
  *
@@ -31,54 +32,54 @@ public class MesaServiceImp implements MesaService {
 
     @Autowired
     private MesaRepository mesaRepository;
-    
+
     @Autowired
     private SistemaReservaMapper mapper;
-
+    
     @Override
     public List<MesaDTO> obtenerMesas() {
-        
+
         List<Mesa> listaMesa = mesaRepository.findAll();
-        
+
         return listaMesa.stream()
-                .map(mapper :: mappearMesa)
+                .map(mapper::mappearMesa)
                 .toList();
-         
+
     }
 
     @Override
     public Mesa obtenerMesaPorId(UUID idMesa) {
 
-        Mesa mesa = mesaRepository.findById(idMesa).orElseThrow(()-> new RuntimeException("Mesa no encontrada"));
-        
-        if(mesa.getReservas().isEmpty()){
+        Mesa mesa = mesaRepository.findById(idMesa).orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
+
+        if (mesa.getReservas().isEmpty()) {
             mesa.setEstado(Estado.DISPONIBLE);
         }
-        
+
         mesaRepository.save(mesa);
-        
+
         return mesa;
 
     }
 
     @Override
     public Mesa crearMesa(Mesa mesa) {
-        
+
         Mesa nuevaMesa = Mesa.builder()
                 .numero(mesa.getNumero())
                 .capacidad(mesa.getCapacidad())
-               . estadoActual(EstadoAhora.Libre)
+                .estadoActual(EstadoAhora.Libre)
                 .estado(Estado.DISPONIBLE)
                 .build();
-        
+
         return mesaRepository.save(nuevaMesa);
-        
+
     }
 
     @Override
-    public MesaDTO editarMesa(UUID idMesa, MesaActualizacionDTO mesaActualizacionDTO ) {
+    public MesaDTO editarMesa(UUID idMesa, MesaActualizacionDTO mesaActualizacionDTO) {
 
-         Mesa mesa = mesaRepository.findById(idMesa)
+        Mesa mesa = mesaRepository.findById(idMesa)
                 .orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
 
         // actualizar solo atributos simples
@@ -94,13 +95,11 @@ public class MesaServiceImp implements MesaService {
         MesaDTO mesaDTO = mapper.mappearMesa(updated);
 
         // mapear reservas ya existentes
-        
-            List<ReservaDTO> reservas= updated.getReservas().stream()
-                .map(mapper::mappearReserva)
+        List<ReservaConMesaDTO> reservas = updated.getReservas().stream()
+                .map(mapper::mappearReservaMesa)
                 .toList();
-            
 
-       mesaDTO.setReservas(reservas);
+        mesaDTO.setReservas(reservas);
 
         return mesaDTO;
 
@@ -119,18 +118,18 @@ public class MesaServiceImp implements MesaService {
 
     @Override
     public boolean estaDisponible(UUID mesaId) {
-        
+
         Mesa mesa = mesaRepository.findById(mesaId).orElse(null);
-        
+
         return mesa.getEstado() != Estado.RESERVADA;
-        
+
     }
 
     @Override
     public List<Mesa> buscarMesasDisponibles(LocalDateTime fecha) {
-    
+
         return mesaRepository.findMesasDisponibles(fecha);
-        
+
     }
 
 }

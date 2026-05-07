@@ -39,6 +39,10 @@ public  class Reserva {
     private int cantidadPersonas;
     
     @ManyToOne
+    @JoinColumn(name="restaurante_id")
+    private Restaurante restaurante;
+    
+    @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
     

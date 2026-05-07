@@ -4,20 +4,27 @@
  */
 package com.sistema.restaurante.serviceImp;
 
+import com.sistema.restaurante.DTO.MesaActualizacionDTO;
 import com.sistema.restaurante.DTO.ReservaConMesaDTO;
-import com.sistema.restaurante.entities.EstadoReserva;
-import com.sistema.restaurante.entities.Reserva;
-import com.sistema.restaurante.entities.Servicio;
+import com.sistema.restaurante.DTO.ReservaDTO;
+import com.sistema.restaurante.DTO.UsuarioDTO;
+import com.sistema.restaurante.entities.*;
 import com.sistema.restaurante.mappers.SistemaReservaMapper;
-import java.util.List;
-import java.util.UUID;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import com.sistema.restaurante.services.ReservaService;
 import com.sistema.restaurante.repository.ReservaRepository;
+import com.sistema.restaurante.services.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
+import java.time.LocalTime;
+import java.time.format.TextStyle;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.ErrorResponseException;
 
 /**
  *
@@ -31,6 +38,21 @@ public class ReservaServiceImp implements ReservaService {
 
     @Autowired
     private SistemaReservaMapper mapper;
+
+    @Autowired
+    private UsuarioService usuarioService;
+
+    @Autowired
+    private MesaService mesaService;
+
+    @Autowired
+    private HorarioRestauranteService horarioRestauranteService;
+
+    @Autowired
+    private FechaBloqueadaService fechaBloqueadaService;
+
+    @Autowired
+    private DisponibilidadTurnoService disponibilidadTurnoService;
 
     @Override
     public List<ReservaConMesaDTO> obtenerReservas() {
@@ -52,26 +74,104 @@ public class ReservaServiceImp implements ReservaService {
     }
 
     @Override
-    public Reserva crearReserva(Reserva reserva) {
+    @Transactional
+    public Reserva crearReserva(ReservaDTO reservaDTO, String emailAutenticado) {
+        Reserva reserva = mapper.mappearReservaDTO(reservaDTO);
+
+        // Usuario
+        Usuario usuario;
+        if (reservaDTO.getUsuario() == null) {
+            usuario = usuarioService.findByEmail(emailAutenticado);
+        } else {
+            UsuarioDTO usuarioDTO = usuarioService.obtenerUsuario(reservaDTO.getUsuario());
+            usuario = mapper.mappearUsuarioDTO(usuarioDTO);
+        }
+        reserva.setUsuario(usuario);
+
+        // Mesa
+        Mesa mesa = mesaService.obtenerMesaPorId(reservaDTO.getMesa());
+        MesaActualizacionDTO mesaSinReservas = mapper.mappearMesaSinReserva(mesa);
+        mesaSinReservas.setEstado(Estado.RESERVADA);
+        mesaService.editarMesa(mesa.getId(), mesaSinReservas);
+        reserva.setMesa(mesa);
+
+        // Validaciones de fecha y turno
+        validarReserva(reserva);
+
+        // Defaults
         reserva.setEstadoReserva(EstadoReserva.Pendiente);
         reserva.setServicio(Servicio.SinServicio);
+
         return reservaRepository.save(reserva);
     }
 
     @Override
-    public Reserva editarReserva(UUID idReserva, Reserva nuevaReserva) {
+    @Transactional
+    public Reserva editarReserva(UUID idReserva, ReservaDTO reservaDTO, String emailAutenticado) {
+        Reserva reservaExistente = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
 
-        Reserva reserva = reservaRepository.findById(idReserva).orElse(null);
+        Reserva reservaNuevosDatos = mapper.mappearReservaDTO(reservaDTO);
 
-        reserva.setCantidadPersonas(nuevaReserva.getCantidadPersonas());
-        reserva.setFecha(nuevaReserva.getFecha());
-        reserva.setMesa(nuevaReserva.getMesa());
-        reserva.setTurno(nuevaReserva.getTurno());
-        reserva.setEstadoReserva(nuevaReserva.getEstadoReserva());
-        reserva.setServicio(nuevaReserva.getServicio());
+        // Usuario
+        Usuario usuario;
+        if (reservaDTO.getUsuario() == null) {
+            usuario = usuarioService.findByEmail(emailAutenticado);
+        } else {
+            UsuarioDTO usuarioDTO = usuarioService.obtenerUsuario(reservaDTO.getUsuario());
+            usuario = mapper.mappearUsuarioDTO(usuarioDTO);
+        }
+        reservaExistente.setUsuario(usuario);
 
-        return reservaRepository.save(reserva);
+        // Mesa
+        Mesa mesa = mesaService.obtenerMesaPorId(reservaDTO.getMesa());
+        reservaExistente.setMesa(mesa);
 
+        // Otros datos
+        reservaExistente.setCantidadPersonas(reservaNuevosDatos.getCantidadPersonas());
+        reservaExistente.setFecha(reservaNuevosDatos.getFecha());
+        reservaExistente.setEstadoReserva(reservaNuevosDatos.getEstadoReserva());
+        reservaExistente.setServicio(reservaNuevosDatos.getServicio());
+
+        // Validaciones
+        validarReserva(reservaExistente);
+
+        return reservaRepository.save(reservaExistente);
+    }
+
+    private void validarReserva(Reserva reserva) {
+        LocalDateTime fecha = reserva.getFecha();
+        LocalTime horaReserva = fecha.toLocalTime();
+
+        // Validar Horario del Restaurante
+        String diaDeLaSemana = fecha.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("es", "ES"));
+        diaDeLaSemana = Character.toUpperCase(diaDeLaSemana.charAt(0)) + diaDeLaSemana.substring(1);
+
+        HorarioRestaurante horario = horarioRestauranteService.obtenerPorDia(diaDeLaSemana);
+        if (horario == null) {
+            throw new IllegalArgumentException("No existe horario configurado para el día " + diaDeLaSemana);
+        }
+
+        LocalTime inicio = horario.getHoraApertura();
+        LocalTime fin = horario.getHoraCierre();
+
+        if (horaReserva.isBefore(inicio) || horaReserva.isAfter(fin)) {
+            throw new IllegalArgumentException("La reserva esta fuera del horario de este día");
+        }
+
+        // Validar Fecha Bloqueada
+        if (fechaBloqueadaService.existenciaSegunFecha(fecha.toLocalDate())) {
+            throw new IllegalArgumentException("La fecha " + fecha.toLocalDate() + " no esta disponible para reservas");
+        }
+
+        // Validar y Asignar Turno
+        List<DisponibilidadTurno> listaTurnos = disponibilidadTurnoService.obtenerTurnos();
+        DisponibilidadTurno turnoEncontrado = listaTurnos.stream()
+                .filter(t -> !horaReserva.isBefore(t.getHoraInicio()) && !horaReserva.isAfter(t.getHoraFin()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("La hora seleccionada no pertenece a ningún turno disponible."));
+
+        reserva.setTurno(turnoEncontrado);
     }
 
     @Override

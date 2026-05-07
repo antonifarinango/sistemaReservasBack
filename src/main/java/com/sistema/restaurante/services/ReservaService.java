@@ -35,10 +35,10 @@ public interface ReservaService {
     Reserva obtenerReserva(UUID idReserva);
     
     //CREAR RESERVA 
-    Reserva crearReserva(Reserva reserva);
+    Reserva crearReserva(ReservaDTO reservaDTO, String emailAutenticado);
     
     //EDITAR RESERVA
-    Reserva editarReserva(UUID idReserva, Reserva reserva);
+    Reserva editarReserva(UUID idReserva, ReservaDTO reservaDTO, String emailAutenticado);
     
     //ELIMINAR RESERVA 
     void eliminarReserva(UUID idReserva);

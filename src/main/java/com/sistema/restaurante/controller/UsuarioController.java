@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.sistema.restaurante.services.UsuarioService;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
 /**
@@ -58,7 +59,14 @@ public class UsuarioController {
     @GetMapping("/clientes")
     public List<UsuarioDTO> listaUsuariosRolCliente (){
         
-        return usuarioService.obtenerUsuariosRol();
+        return usuarioService.obtenerUsuariosConReservaPorRol();
+        
+    }
+    
+    @GetMapping("/todos-clientes")
+    public List<UsuarioDTO> listaClientes (){
+        
+        return usuarioService.obtenerUsuariosPorRol();
         
     }
     
@@ -104,5 +112,5 @@ public class UsuarioController {
         return ResponseEntity.ok(response);
 
     }
-
+    
 }

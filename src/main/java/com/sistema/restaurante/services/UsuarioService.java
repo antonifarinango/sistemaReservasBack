@@ -19,8 +19,11 @@ public interface UsuarioService{
     //OBTENER LISTA DE USUARIOS
     List<UsuarioDTO> obtenerUsuarios();
     
-    //OBTENER LISTA DE USUARIOS POR ROL
-    List<UsuarioDTO> obtenerUsuariosRol();
+    //OBTENER LISTA DE USUARIOS QUE TENGAN AL MENOS UNA RESERVA POR ROL
+    List<UsuarioDTO> obtenerUsuariosConReservaPorRol();
+    
+     //OBTENER LISTA DE USUARIOS  POR ROL
+    List<UsuarioDTO> obtenerUsuariosPorRol();
     
     //OBTENER LISTA DE USUARIOS POR ROL
     List<UsuarioRolDTO> obtenerUsuariosExcluyendoRol();

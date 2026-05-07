@@ -4,21 +4,12 @@
  */
 package com.sistema.restaurante.controller;
 
-import com.sistema.restaurante.DTO.MesaActualizacionDTO;
 import com.sistema.restaurante.DTO.ReservaConMesaDTO;
 import com.sistema.restaurante.DTO.ReservaDTO;
 import com.sistema.restaurante.DTO.UsuarioDTO;
-import com.sistema.restaurante.entities.DisponibilidadTurno;
-import com.sistema.restaurante.entities.Estado;
-import com.sistema.restaurante.entities.HorarioRestaurante;
-import com.sistema.restaurante.entities.Mesa;
 import com.sistema.restaurante.entities.Reserva;
 import com.sistema.restaurante.entities.Usuario;
 import com.sistema.restaurante.mappers.SistemaReservaMapper;
-import com.sistema.restaurante.services.DisponibilidadTurnoService;
-import com.sistema.restaurante.services.FechaBloqueadaService;
-import com.sistema.restaurante.services.HorarioRestauranteService;
-import com.sistema.restaurante.services.MesaService;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -37,10 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.sistema.restaurante.services.ReservaService;
 import com.sistema.restaurante.services.UsuarioService;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.TextStyle;
-import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -58,14 +45,6 @@ public class ReservaController {
     private ReservaService reservaService;
     @Autowired
     private UsuarioService usuarioService;
-    @Autowired
-    private MesaService mesaService;
-    @Autowired
-    private HorarioRestauranteService horarioRestauranteService;
-    @Autowired
-    private FechaBloqueadaService fechaBloqueadaService;
-    @Autowired
-    private DisponibilidadTurnoService disponibilidadTurnoService;
     @Autowired
     private NotificacionController notificador;
 
@@ -137,154 +116,85 @@ public class ReservaController {
 
     @PostMapping("/crear")
     public ResponseEntity<?> guardarReserva(@RequestBody ReservaDTO reservaDTO, Authentication authentication) {
+        try {
+            String email = (authentication != null) ? authentication.getName() : null;
+            Reserva nuevaReserva = reservaService.crearReserva(reservaDTO, email);
+            ReservaConMesaDTO respuesta = mapper.mappearReservaMesa(nuevaReserva);
+            respuesta.setTipoNotificacion("CREACION");
 
-        Reserva reserva = mapper.mappearReservaDTO(reservaDTO);
+            notificador.enviarNotificacionReserva(respuesta);
 
-        // Usuario autenticado
-        String email = authentication.getName();
-        Usuario usuario = usuarioService.findByEmail(email);
-        reserva.setUsuario(usuario);
+            URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                    .path("/{id}")
+                    .buildAndExpand(nuevaReserva.getId())
+                    .toUri();
 
-        // Mesa
-        Mesa mesa = mesaService.obtenerMesaPorId(reservaDTO.getMesa());
-        MesaActualizacionDTO mesaSinReservas = mapper.mappearMesaSinReserva(mesa);
-        mesaSinReservas.setEstado(Estado.RESERVADA);
-        mesaService.editarMesa(mesa.getId(), mesaSinReservas);
-        reserva.setMesa(mesa);
-        // Fecha
-        LocalDateTime fecha = reserva.getFecha();
-        LocalTime horaReserva = fecha.toLocalTime();
-
-        String diaDeLaSemana = fecha.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("es", "ES"));
-        diaDeLaSemana = Character.toUpperCase(diaDeLaSemana.charAt(0)) + diaDeLaSemana.substring(1);
-
-        HorarioRestaurante horario = horarioRestauranteService.obtenerPorDia(diaDeLaSemana);
-
-        LocalTime inicio = horario.getHoraApertura();
-        LocalTime fin = horario.getHoraCierre();
-
-        boolean dentroDelRango = !horaReserva.isBefore(inicio) && !horaReserva.isAfter(fin);
-
-        boolean fechaBloqueada = fechaBloqueadaService.existenciaSegunFecha(fecha.toLocalDate());
-
-        // Turno
-        List<DisponibilidadTurno> listaTurnos = disponibilidadTurnoService.obtenerTurnos();
-        DisponibilidadTurno turnoEncontrado = listaTurnos.stream()
-                .filter(t -> !horaReserva.isBefore(t.getHoraInicio()) && !horaReserva.isAfter(t.getHoraFin()))
-                .findFirst()
-                .orElse(null);
-
-        if (turnoEncontrado == null) {
+            return ResponseEntity
+                    .created(location)
+                    .body(Map.of(
+                            "mensaje", "Reserva creada correctamente",
+                            "reserva", respuesta));
+        } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "La hora seleccionada no pertenece a ningún turno disponible."));
-        }
-        reserva.setTurno(turnoEncontrado);
-
-        if (fechaBloqueada) {
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
             return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "La fecha " + fecha.toLocalDate() + " no esta disponible para reservas"));
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Ocurrió un error al procesar la reserva: " + e.getMessage()));
         }
-
-        if (!dentroDelRango) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "La reserva esta fuera del horario de este día"));
-        }
-
-        // Guardar
-        Reserva nuevaReserva = reservaService.crearReserva(reserva);
-        ReservaConMesaDTO respuesta = mapper.mappearReservaMesa(nuevaReserva);
-
-        notificador.enviarNotificacionReserva(respuesta);
-        // notificador.enviarNotificacionReserva(respuesta, numeroMesa);
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(nuevaReserva.getId())
-                .toUri();
-
-        return ResponseEntity
-                .created(location)
-                .body(Map.of(
-                        "mensaje", "Reserva creada correctamente",
-                        "reserva", respuesta));
     }
 
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> actualizarReserva(@PathVariable UUID id, @RequestBody ReservaDTO reservaDTO, Authentication authentication) {
+        try {
+            String email = (authentication != null) ? authentication.getName() : null;
+            Reserva actualizada = reservaService.editarReserva(id, reservaDTO, email);
+            ReservaConMesaDTO respuesta = mapper.mappearReservaMesa(actualizada);
+            
+            boolean isCliente = authentication != null && authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_Cliente"));
 
-        Reserva reserva = mapper.mappearReservaDTO(reservaDTO);
+            if (actualizada.getEstadoReserva() == com.sistema.restaurante.entities.EstadoReserva.Confirmada) {
+                respuesta.setTipoNotificacion("CONFIRMACION");
+            } else if (isCliente) {
+                respuesta.setTipoNotificacion("MODIFICACION");
+            } else {
+                respuesta.setTipoNotificacion("MODIFICACION_ADMIN");
+            }
 
-        // Usuario autenticado
-        String email = authentication.getName();
-        Usuario usuario = usuarioService.findByEmail(email);
-        reserva.setUsuario(usuario);
+            notificador.enviarNotificacionReserva(respuesta);
 
-        // Mesa
-        Mesa mesa = mesaService.obtenerMesaPorId(reservaDTO.getMesa());
-        reserva.setMesa(mesa);
-
-        // Fecha
-        LocalDateTime fecha = reserva.getFecha();
-        LocalTime horaReserva = fecha.toLocalTime();
-        String diaDeLaSemana = fecha.getDayOfWeek()
-                .getDisplayName(TextStyle.FULL, new Locale("es", "ES"));
-        diaDeLaSemana = Character.toUpperCase(diaDeLaSemana.charAt(0)) + diaDeLaSemana.substring(1);
-
-        HorarioRestaurante horario = horarioRestauranteService.obtenerPorDia(diaDeLaSemana);
-        if (horario == null) {
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(Map.of(
+                            "mensaje", "Reserva actualizada correctamente",
+                            "reserva", respuesta
+                    ));
+        } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "No existe horario configurado para el día  " + diaDeLaSemana));
-        }
-
-        LocalTime inicio = horario.getHoraApertura();
-        LocalTime fin = horario.getHoraCierre();
-
-        boolean dentroDelRango = !horaReserva.isBefore(inicio) && !horaReserva.isAfter(fin);
-        boolean fechaBloqueada = fechaBloqueadaService.existenciaSegunFecha(fecha.toLocalDate());
-
-        // Turno
-        List<DisponibilidadTurno> listaTurnos = disponibilidadTurnoService.obtenerTurnos();
-        DisponibilidadTurno turnoEncontrado = listaTurnos.stream()
-                .filter(t -> !horaReserva.isBefore(t.getHoraInicio()) && !horaReserva.isAfter(t.getHoraFin()))
-                .findFirst()
-                .orElse(null);
-
-        if (turnoEncontrado == null) {
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
             return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "La hora seleccionada no pertenece a ningún turno disponible."));
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Ocurrió un error al actualizar la reserva: " + e.getMessage()));
         }
-        reserva.setTurno(turnoEncontrado);
-
-        if (fechaBloqueada) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "La fecha " + fecha.toLocalDate() + " no esta disponible para reservas"));
-        }
-
-        if (!dentroDelRango) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "La reserva esta fuera del horario de este día"));
-        }
-
-        // Actualizar
-        Reserva actualizada = reservaService.editarReserva(id, reserva);
-        ReservaConMesaDTO respuesta = mapper.mappearReservaMesa(actualizada);
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(Map.of(
-                        "mensaje", "Reserva actualizada correctamente",
-                        "reserva", respuesta
-                ));
     }
 
     @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<Map<String, Boolean>> eliminarReserva(@PathVariable UUID id) {
+
+        try {
+            Reserva reserva = reservaService.obtenerReserva(id);
+            if (reserva != null) {
+                ReservaConMesaDTO dto = mapper.mappearReservaMesa(reserva);
+                dto.setTipoNotificacion("ELIMINACION");
+                notificador.enviarNotificacionReserva(dto);
+            }
+        } catch (Exception e) {
+            // Loguear o ignorar si no se encuentra
+        }
 
         reservaService.eliminarReserva(id);
         Map<String, Boolean> response = new HashMap<>();
